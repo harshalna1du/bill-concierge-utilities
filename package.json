@@ -1,0 +1,28 @@
+{
+  "name": "harshal-utilities",
+  "version": "1.0.0",
+  "description": "Modular AI Utility Toolkit for agentic applications",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server/server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "ai",
+    "gemini",
+    "utilities"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cookie-parser": "^1.4.6",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "google-auth-library": "^9.11.0",
+    "pino": "^9.2.0"
+  },
+  "devDependencies": {
+    "pino-pretty": "^11.2.1"
+  }
+}

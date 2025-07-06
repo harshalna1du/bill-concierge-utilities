@@ -3,11 +3,11 @@ import express from 'express';
 import cookieParser from 'cookie-parser';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { GeminiApiClient, GeminiApiError } from './geminiAPI.js';
-import { createLogger } from './logger.js';
+import { GeminiApiClient, GeminiApiError } from '../gemini/geminiApi.js';
+import { createLogger } from '../logging/logger.js';
 
-const DEFAULT_TEXT_MODEL = 'gemini-2.5-flash';
-const DEFAULT_VISION_MODEL = 'gemini-2.5-flash';
+const DEFAULT_TEXT_MODEL = 'gemini-1.5-flash-001';
+const DEFAULT_VISION_MODEL = 'gemini-1.5-flash-001';
 const DEFAULT_MAX_PAYLOAD_SIZE = '10mb';
 
 const logger = createLogger();
@@ -22,7 +22,7 @@ const geminiClient = new GeminiApiClient({
   projectId: process.env.PROJECT_ID,
   location: process.env.LOCATION,
   defaultTextModel: process.env.MODEL_NAME || DEFAULT_TEXT_MODEL,
-  defaultFileModel: process.env.MODEL_NAME_VISION || DEFAULT_VISION_MODEL,
+  defaultFileModel: process.env.FILE_MODEL_NAME || DEFAULT_VISION_MODEL,
   systemInstruction: process.env.SYSTEM_INSTRUCTION,
   logger: logger.child({ component: 'GeminiApiClient' })
 });
