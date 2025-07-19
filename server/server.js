@@ -28,7 +28,7 @@ const geminiClient = new GeminiApiClient({
 });
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3002;
 
 // ES Module equivalent for __dirname
 const __filename = fileURLToPath(import.meta.url);
