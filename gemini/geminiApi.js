@@ -156,33 +156,48 @@ export class GeminiApiClient {
   }
 
   /**
-   * Sends a message and a file to the Gemini API.
+   * Sends a message and one or more files to the Gemini API.
    * @param {string} userInput The user's text message.
    * @param {Array<object>} history The conversation history.
-   * @param {string} fileBase64 - The base64-encoded file data.
-   * @param {string} fileMimeType - The MIME type of the file.
+   * @param {Array<{buffer: Buffer, mimetype: string}>} files - An array of file objects to send.
    * @param {string} [modelName] - The name of the model to use, overriding the default.
    * @param {Array<object>} [tools] - Optional. A list of function declarations for the model to use.
    * @returns {Promise<object>} The model's response part, containing either text or a functionCall.
    */
-  async sendMessageWithFile(userInput, history, fileBase64, fileMimeType, modelName, tools) {
+  async sendMessageWithFiles(userInput, history, files, modelName, tools) {
     const modelToUse = modelName || this.#defaultFileModel;
     if (!modelToUse) {
       throw new GeminiApiError('No modelName provided and no defaultFileModel is configured.', 400);
+    }
+    if (!files || !Array.isArray(files) || files.length === 0) {
+      throw new GeminiApiError('The "files" parameter must be a non-empty array.', 400);
     }
     const url = `https://${this.#location}-aiplatform.googleapis.com/v1beta1/projects/${this.#projectId}/locations/${this.#location}/publishers/google/models/${modelToUse}:generateContent`;
 
     // If userInput is empty, provide a default prompt. Otherwise, use the user's input.
     // This ensures a non-empty text part is always sent, as required by the API for multimodal requests.
-    const textPrompt = userInput || 'What is in this file?';
+    const textPrompt = userInput || 'What is in these files?';
+
+    const parts = [{ text: textPrompt }];
+
+    // Loop through the files array and add each one as an inlineData part.
+    for (const file of files) {
+      if (!file.buffer || !file.mimetype) {
+        throw new GeminiApiError('Each file object in the "files" array must have "buffer" and "mimetype" properties.', 400);
+      }
+      const fileBase64 = file.buffer.toString('base64');
+      parts.push({
+        inlineData: {
+          mimeType: file.mimetype,
+          data: fileBase64
+        }
+      });
+    }
 
     const requestBody = {
       contents: [...history, {
         role: 'user',
-        parts: [
-          { text: textPrompt },
-          { inlineData: { mimeType: fileMimeType, data: fileBase64 } }
-        ]
+        parts: parts
       }]
     };
 

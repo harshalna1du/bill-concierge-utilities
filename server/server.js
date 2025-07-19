@@ -66,16 +66,28 @@ app.post('/api/chat', async (req, res, next) => {
   }
 });
 
-app.post('/api/chat-with-file', async (req, res, next) => {
-  const { userInput, history = [], fileBase64, fileMimeType } = req.body;
+app.post('/api/chat-with-files', async (req, res, next) => {
+  const { userInput, history = [], files } = req.body;
 
-  if (!fileBase64 || !fileMimeType) {
-    return res.status(400).json({ error: 'fileBase64 and fileMimeType are required.' });
+  if (!files || !Array.isArray(files) || files.length === 0) {
+    return res.status(400).json({ error: 'A non-empty "files" array is required.' });
   }
 
   try {
-    logger.info({ userInput, mimeType: fileMimeType, historyLength: history.length }, 'Received chat request with file');
-    const modelResponsePart = await geminiClient.sendMessageWithFile(userInput, history, fileBase64, fileMimeType);
+    logger.info({ userInput, fileCount: files.length, historyLength: history.length }, 'Received chat request with files');
+
+    // The GeminiApiClient expects an array of { buffer, mimetype }
+    const filesForApi = files.map(file => {
+      if (!file.fileBase64 || !file.fileMimeType) {
+        throw new GeminiApiError('Each file object in the "files" array must have "fileBase64" and "fileMimeType" properties.', 400);
+      }
+      return {
+        buffer: Buffer.from(file.fileBase64, 'base64'),
+        mimetype: file.fileMimeType
+      };
+    });
+
+    const modelResponsePart = await geminiClient.sendMessageWithFiles(userInput, history, filesForApi);
     const modelResponse = modelResponsePart.text || '';
     res.json({ modelResponse });
   } catch (error) {
