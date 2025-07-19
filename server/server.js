@@ -3,14 +3,14 @@ import express from 'express';
 import cookieParser from 'cookie-parser';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import pino from 'pino';
 import { GeminiApiClient, GeminiApiError } from '../gemini/geminiApi.js';
-import { createLogger } from '../logging/logger.js';
 
 const DEFAULT_TEXT_MODEL = 'gemini-1.5-flash-001';
 const DEFAULT_VISION_MODEL = 'gemini-1.5-flash-001';
 const DEFAULT_MAX_PAYLOAD_SIZE = '10mb';
 
-const logger = createLogger();
+const logger = pino();
 
 // Initialize Gemini Client
 if (!process.env.PROJECT_ID || !process.env.LOCATION) {

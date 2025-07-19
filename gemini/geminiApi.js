@@ -55,7 +55,26 @@ export class GeminiApiClient {
   async #makeApiCall({ url, requestBody }) { // eslint-disable-line
     // The google-auth-library's request method automatically handles fetching and caching access tokens.
     const authClient = await this.#auth.getClient();
-    this.#logger.info({ requestBody }, `Sending request to API: ${url}`);
+
+    // Create a log-friendly version of the request body to avoid logging huge Base64 strings.
+    const loggableBody = {
+      ...requestBody,
+      contents: requestBody.contents.map(content => ({
+        ...content,
+        parts: content.parts.map(part => {
+          if (part.inlineData) {
+            return {
+              inlineData: {
+                mimeType: part.inlineData.mimeType,
+                data: `[Base64 data of length ${part.inlineData.data.length}]`
+              }
+            };
+          }
+          return part;
+        })
+      }))
+    };
+    this.#logger.info({ requestBody: loggableBody }, `Sending request to API: ${url}`);
 
     let response;
     try {
@@ -174,6 +193,8 @@ export class GeminiApiClient {
     }
     const url = `https://${this.#location}-aiplatform.googleapis.com/v1beta1/projects/${this.#projectId}/locations/${this.#location}/publishers/google/models/${modelToUse}:generateContent`;
 
+    this.#logger.info({ fileCount: files.length }, 'Preparing to send message with files to Gemini.');
+
     // If userInput is empty, provide a default prompt. Otherwise, use the user's input.
     // This ensures a non-empty text part is always sent, as required by the API for multimodal requests.
     const textPrompt = userInput || 'What is in these files?';
@@ -186,6 +207,8 @@ export class GeminiApiClient {
         throw new GeminiApiError('Each file object in the "files" array must have "buffer" and "mimetype" properties.', 400);
       }
       const fileBase64 = file.buffer.toString('base64');
+      this.#logger.info({ mimeType: file.mimetype, base64Length: fileBase64.length }, 'Processing file for API request.');
+
       parts.push({
         inlineData: {
           mimeType: file.mimetype,
