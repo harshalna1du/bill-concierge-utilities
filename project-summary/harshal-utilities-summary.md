@@ -1,21 +1,23 @@
-# Baseline 1: Initial Project Setup & API Server
+# Baseline 2: Multi-File API & Library Refinement
 
-This document summarizes the state of the `harshal-utilities` project at the completion of the initial setup. The project is a functional Node.js backend service for interacting with the Google Gemini API.
+This document summarizes the state of the `harshal-utilities` project after being upgraded to support multi-file analysis. The project serves as a robust, reusable, and independently distributable service for interacting with the Google Gemini API.
 
 ---
 
 ### Key Components
 
 1.  **Express API Server (`server/server.js`)**
-    *   A clean Express.js server that exposes the Gemini client's functionality through a REST API.
+    *   A clean Express.js server that exposes the `GeminiApiClient`'s functionality through a REST API.
     *   Features two primary endpoints:
         *   `/api/chat`: For text-only conversations.
-        *   `/api/chat-with-file`: For multimodal interactions involving file uploads.
+        *   `/api/chat-with-files`: For multimodal interactions involving one or more file uploads.
+    *   The `/api/chat-with-files` endpoint now accepts an array of files, allowing for more complex, multi-document analysis in a single request.
     *   Includes a centralized error handler, robust input validation, and is configured to serve static files from a `public` directory for a future UI.
 
 2.  **Gemini API Client (`gemini/geminiApi.js`)**
     *   The core of the project is a reusable `GeminiApiClient` class.
     *   It handles the complexities of authenticating with Google Cloud (using Application Default Credentials) and constructing requests.
+    *   The `sendMessageWithFile` method has been upgraded to `sendMessageWithFiles`, which now accepts an array of file objects (`{ buffer, mimetype }`). This is a key enhancement that enables consumers like `harshal-agent` to conduct context-aware conversations across multiple documents.
     *   Features excellent, detailed error handling with a custom `GeminiApiError` class to manage API-specific issues like safety blocks or empty responses.
 
 3.  **Configuration & Logging**
@@ -25,7 +27,7 @@ This document summarizes the state of the `harshal-utilities` project at the com
 4.  **Testing (`powershell-tests/`)**
     *   A practical testing strategy is established using dedicated PowerShell scripts.
     *   `test-api-text.ps1`: Tests the text-only chat endpoint.
-    *   `test-api-file.ps1`: Tests the file upload and analysis endpoint, demonstrating the multimodal capabilities.
+    *   `test-api-file.ps1`: Tests the file upload and analysis endpoint, demonstrating the new multi-file capabilities of the `/api/chat-with-files` endpoint.
     *   The scripts are well-written, using best practices like relative pathing (`$PSScriptRoot`) to be runnable from any location.
 
 ---
@@ -64,3 +66,4 @@ harshal-utilities/
 2.  **Install**: Run `npm install`.
 3.  **Start Server**: Run `npm start`.
 4.  **Test**: Open a new PowerShell terminal and run the scripts in the `powershell-tests` directory.
+ 
