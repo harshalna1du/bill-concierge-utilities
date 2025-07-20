@@ -11,6 +11,7 @@ This document summarizes the state of the `harshal-utilities` project after bein
     *   Features two primary endpoints:
         *   `/api/chat`: For text-only conversations.
         *   `/api/chat-with-files`: For multimodal interactions involving one or more file uploads.
+    *   **Deployment Ready**: The server listens on the `PORT` environment variable if available, falling back to `3002` for local development.
     *   The `/api/chat-with-files` endpoint now accepts an array of files, allowing for more complex, multi-document analysis in a single request.
     *   Includes a centralized error handler, robust input validation, and is configured to serve static files from a `public` directory for a future UI.
 

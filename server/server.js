@@ -28,7 +28,7 @@ const geminiClient = new GeminiApiClient({
 });
 
 const app = express();
-const port = process.env.PORT || 3002;
+const PORT = process.env.PORT || 3002;
 
 // ES Module equivalent for __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -104,6 +104,6 @@ app.use('/api', (err, req, res, next) => {
   res.status(500).json({ error: 'An unexpected error occurred.' });
 });
 
-app.listen(port, () => {
-  logger.info(`Server is running on http://localhost:${port}`);
+app.listen(PORT, () => {
+  logger.info(`Server is running on http://localhost:${PORT}`);
 });
