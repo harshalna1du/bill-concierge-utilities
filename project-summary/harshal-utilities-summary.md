@@ -17,12 +17,14 @@ This document summarizes the state of the `harshal-utilities` project after bein
 2.  **Gemini API Client (`gemini/geminiApi.js`)**
     *   The core of the project is a reusable `GeminiApiClient` class.
     *   It handles the complexities of authenticating with Google Cloud (using Application Default Credentials) and constructing requests.
+    *   **Environment-Aware Authentication**: The constructor is designed for portability between local development and deployed environments. It checks for a `GOOGLE_APPLICATION_CREDENTIALS_JSON` environment variable. If present, it authenticates using those credentials (ideal for servers like Render). If not, it falls back to using Application Default Credentials, which is ideal for local development.
     *   The `sendMessageWithFile` method has been upgraded to `sendMessageWithFiles`, which now accepts an array of file objects (`{ buffer, mimetype }`). This is a key enhancement that enables consumers like `harshal-agent` to conduct context-aware conversations across multiple documents.
     *   Features excellent, detailed error handling with a custom `GeminiApiError` class to manage API-specific issues like safety blocks or empty responses.
 
 3.  **Configuration & Logging**
     *   **Configuration (`.env`)**: The server is properly configured to load credentials and settings from a `.env` file, with a `.env.example` template for easy setup.
     *   **Logging (`logging/logger.js`)**: Utilizes `pino` for structured, asynchronous logging to both the console (using `pino-pretty` for readability) and a file (`app.log`) for persistence.
+    *   **Deployment Configuration**: For deployed environments, authentication can be configured by setting the `GOOGLE_APPLICATION_CREDENTIALS_JSON` environment variable with the contents of the service account JSON key file.
 
 4.  **Testing (`powershell-tests/`)**
     *   A practical testing strategy is established using dedicated PowerShell scripts.
