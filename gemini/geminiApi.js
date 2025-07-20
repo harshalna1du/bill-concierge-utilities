@@ -47,9 +47,27 @@ export class GeminiApiClient {
     this.#defaultTextModel = options.defaultTextModel;
     this.#defaultFileModel = options.defaultFileModel;
     this.#systemInstruction = options.systemInstruction;
-    this.#auth = new GoogleAuth({
+
+    // Environment-aware authentication
+    const authOptions = {
       scopes: 'https://www.googleapis.com/auth/cloud-platform'
-    });
+    };
+
+    if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
+      // Deployed environment (e.g., Render): use credentials from environment variable
+      this.#logger.info('Found GOOGLE_APPLICATION_CREDENTIALS_JSON. Initializing GoogleAuth with provided credentials.');
+      try {
+        authOptions.credentials = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+      } catch (error) {
+        this.#logger.error({ err: error }, 'Failed to parse GOOGLE_APPLICATION_CREDENTIALS_JSON. Ensure it is a valid JSON string.');
+        throw new GeminiApiError('Failed to parse GOOGLE_APPLICATION_CREDENTIALS_JSON.', 400, { originalError: error.message });
+      }
+    } else {
+      // Local development: use Application Default Credentials
+      this.#logger.info('GOOGLE_APPLICATION_CREDENTIALS_JSON not found. Initializing GoogleAuth with Application Default Credentials.');
+    }
+
+    this.#auth = new GoogleAuth(authOptions);
   }
 
   async #makeApiCall({ url, requestBody }) { // eslint-disable-line
