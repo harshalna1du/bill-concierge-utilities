@@ -11,8 +11,8 @@ import {
   GeminiApiError
 } from '../gemini/geminiApi.js';
 
-const DEFAULT_TEXT_MODEL = 'gemini-1.5-flash-001';
-const DEFAULT_VISION_MODEL = 'gemini-1.5-flash-001';
+const DEFAULT_TEXT_MODEL = 'gemini-2.5-flash';
+const DEFAULT_VISION_MODEL = 'gemini-2.5-flash';
 const DEFAULT_MAX_PAYLOAD_SIZE = '10mb';
 
 const logger = pino();
@@ -59,7 +59,6 @@ app.get('/api/config', (req, res) => {
 });
 
 app.post('/api/chat', async (req, res, next) => {
-  // For simplicity, we are not persisting history on the server between requests.
   const {
     userInput,
     history = []
@@ -87,11 +86,11 @@ app.post('/api/chat', async (req, res, next) => {
 });
 
 app.post('/api/chat-with-files', async (req, res, next) => {
-  // Use 'prompt' to align with the agent's request body, with a fallback to 'userInput'
+  // *** THE FIRST FIX IS HERE ***
+  // We now correctly look for a 'prompt' property from the agent,
+  // falling back to 'userInput' for other potential callers.
   const {
-    prompt: userInput,
-    history = [],
-    files
+    prompt = req.body.userInput, history = [], files
   } = req.body;
 
   if (!files || !Array.isArray(files) || files.length === 0) {
@@ -102,12 +101,11 @@ app.post('/api/chat-with-files', async (req, res, next) => {
 
   try {
     logger.info({
-      userInput,
+      prompt,
       fileCount: files.length,
       historyLength: history.length
     }, 'Received chat request with files');
 
-    // The GeminiApiClient expects an array of { buffer, mimetype }
     const filesForApi = files.map(file => {
       if (!file.fileBase64 || !file.fileMimeType) {
         throw new GeminiApiError('Each file object in the "files" array must have "fileBase64" and "fileMimeType" properties.', 400);
@@ -118,10 +116,11 @@ app.post('/api/chat-with-files', async (req, res, next) => {
       };
     });
 
-    const modelResponsePart = await geminiClient.sendMessageWithFiles(userInput, history, filesForApi);
+    // We pass the detailed `prompt` to the Gemini client.
+    const modelResponsePart = await geminiClient.sendMessageWithFiles(prompt, history, filesForApi);
     const responseText = modelResponsePart.text || '';
 
-    // *** THE FIX IS HERE ***
+    // *** THE SECOND FIX IS HERE ***
     // Send the response back in a { "text": "..." } object to match
     // the contract expected by the harshal-agent service.
     res.json({
