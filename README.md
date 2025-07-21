@@ -1,72 +1,51 @@
-# Baseline 2: Multi-File API & Library Refinement
+# Project Summary: `bill-concierge-utilities`
 
-This document summarizes the state of the `harshal-utilities` project after being upgraded to support multi-file analysis. The project serves as a robust, reusable, and independently distributable service for interacting with the Google Gemini API.
+**Version:** 2.0 (Contest Submission)
+**Date:** 2025-07-21
 
----
+## 1. Project Purpose
 
-### Key Components
-
-1.  **Express API Server (`server/server.js`)**
-    *   A clean Express.js server that exposes the `GeminiApiClient`'s functionality through a REST API.
-    *   Features two primary endpoints:
-        *   `/api/chat`: For text-only conversations.
-        *   `/api/chat-with-files`: For multimodal interactions involving one or more file uploads.
-    *   **Deployment Ready**: The server listens on the `PORT` environment variable if available, falling back to `3002` for local development.
-    *   The `/api/chat-with-files` endpoint now accepts an array of files, allowing for more complex, multi-document analysis in a single request.
-    *   Includes a centralized error handler, robust input validation, and is configured to serve static files from a `public` directory for a future UI.
-
-2.  **Gemini API Client (`gemini/geminiApi.js`)**
-    *   The core of the project is a reusable `GeminiApiClient` class.
-    *   It handles the complexities of authenticating with Google Cloud (using Application Default Credentials) and constructing requests.
-    *   **Environment-Aware Authentication**: The constructor is designed for portability between local development and deployed environments. It checks for a `GOOGLE_APPLICATION_CREDENTIALS_JSON` environment variable. If present, it authenticates using those credentials (ideal for servers like Render). If not, it falls back to using Application Default Credentials, which is ideal for local development.
-    *   The `sendMessageWithFile` method has been upgraded to `sendMessageWithFiles`, which now accepts an array of file objects (`{ buffer, mimetype }`). This is a key enhancement that enables consumers like `harshal-agent` to conduct context-aware conversations across multiple documents.
-    *   Features excellent, detailed error handling with a custom `GeminiApiError` class to manage API-specific issues like safety blocks or empty responses.
-
-3.  **Configuration & Logging**
-    *   **Configuration (`.env`)**: The server is properly configured to load credentials and settings from a `.env` file, with a `.env.example` template for easy setup.
-    *   **Logging (`logging/logger.js`)**: Utilizes `pino` for structured, asynchronous logging to both the console (using `pino-pretty` for readability) and a file (`app.log`) for persistence.
-    *   **Deployment Configuration**: For deployed environments, authentication can be configured by setting the `GOOGLE_APPLICATION_CREDENTIALS_JSON` environment variable with the contents of the service account JSON key file.
-
-4.  **Testing (`powershell-tests/`)**
-    *   A practical testing strategy is established using dedicated PowerShell scripts.
-    *   `test-api-text.ps1`: Tests the text-only chat endpoint.
-    *   `test-api-file.ps1`: Tests the file upload and analysis endpoint, demonstrating the new multi-file capabilities of the `/api/chat-with-files` endpoint.
-    *   The scripts are well-written, using best practices like relative pathing (`$PSScriptRoot`) to be runnable from any location.
+The `bill-concierge-utilities` project is a dedicated, reusable, and independently deployable microservice responsible for all direct communication with the Google Gemini API. It acts as a secure and robust wrapper, abstracting away the complexities of AI model interaction from the main application logic.
 
 ---
 
-### Project Structure
+## 2. Key Components
 
-```
-harshal-utilities/
+1.  **Express API Server (`server/server.js`)**:
+    * A clean Express.js server that exposes the `GeminiApiClient`'s functionality through a REST API.
+    * **Contract-Driven Endpoint**: Features a primary endpoint, `POST /api/chat-with-files`, designed to accept a specific contract from the `bill-concierge-agent`. It correctly receives the detailed `prompt`, conversation `history`, and `files` data and passes them to the Gemini client.
+    * **Deployment Ready**: The server is configured to listen on the `PORT` environment variable provided by the hosting platform (e.g., Render), falling back to a default port for local development.
+
+2.  **Gemini API Client (`gemini/geminiApi.js`)**:
+    * The core of the project is a reusable `GeminiApiClient` class.
+    * **Environment-Aware Authentication**: The client's authentication is robust and flexible. It automatically uses local Application Default Credentials (ADC) for development but can be configured with a `GOOGLE_APPLICATION_CREDENTIALS_JSON` environment variable for deployed environments, making it highly portable.
+    * It handles the complexities of constructing requests for the Gemini API, including handling multiple file parts.
+
+3.  **Configuration & Logging**:
+    * **Configuration (`.env`)**: All configuration (Project ID, Location, Model Names) is managed via environment variables, with a `.env.example` file for easy setup. This follows the 12-factor app methodology for clean separation of config from code.
+    * **Logging**: Utilizes `pino` for structured, asynchronous logging.
+
+---
+
+## 3. Project Structure
+
+
+bill-concierge-utilities/
 ├── .env
 ├── .env.example
 ├── .gitignore
 ├── gemini/
 │   └── geminiApi.js
-├── index.js
-├── logging/
-│   └── logger.js
-├── node_modules/
 ├── package.json
-├── pdf/
-│   └── parsePdf.js
-├── powershell-tests/
-│   ├── test-api-file.ps1
-│   └── test-api-text.ps1
 ├── server/
 │   └── server.js
 └── test-data/
-    └── pdf/
-        └── Sample_Utility_Bill.pdf
-```
+└── pdf/
+└── Bill1.pdf
+
 
 ---
 
-### How to Run and Test
+## 4. Current State
 
-1.  **Setup**: Create a `.env` file from `.env.example` and fill in your Google Cloud `PROJECT_ID` and `LOCATION`.
-2.  **Install**: Run `npm install`.
-3.  **Start Server**: Run `npm start`.
-4.  **Test**: Open a new PowerShell terminal and run the scripts in the `powershell-tests` directory.
- 
+The `bill-concierge-utilities` service is stable, fully tested, and successfully deployed on Render. It correctly serves its purpose as the core AI interaction layer of the application, reliably handling requests from the `bill-concierge-agent` and communicating with the Gemini API.
