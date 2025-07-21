@@ -2,9 +2,14 @@ import 'dotenv/config';
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import {
+  fileURLToPath
+} from 'url';
 import pino from 'pino';
-import { GeminiApiClient, GeminiApiError } from '../gemini/geminiApi.js';
+import {
+  GeminiApiClient,
+  GeminiApiError
+} from '../gemini/geminiApi.js';
 
 const DEFAULT_TEXT_MODEL = 'gemini-1.5-flash-001';
 const DEFAULT_VISION_MODEL = 'gemini-1.5-flash-001';
@@ -24,7 +29,9 @@ const geminiClient = new GeminiApiClient({
   defaultTextModel: process.env.MODEL_NAME || DEFAULT_TEXT_MODEL,
   defaultFileModel: process.env.FILE_MODEL_NAME || DEFAULT_VISION_MODEL,
   systemInstruction: process.env.SYSTEM_INSTRUCTION,
-  logger: logger.child({ component: 'GeminiApiClient' })
+  logger: logger.child({
+    component: 'GeminiApiClient'
+  })
 });
 
 const app = express();
@@ -35,7 +42,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Middlewares
-app.use(express.json({ limit: process.env.MAX_PAYLOAD_SIZE || DEFAULT_MAX_PAYLOAD_SIZE }));
+app.use(express.json({
+  limit: process.env.MAX_PAYLOAD_SIZE || DEFAULT_MAX_PAYLOAD_SIZE
+}));
 app.use(cookieParser());
 
 // Serve static files (like index.html and client.js) from the 'public' directory
@@ -51,30 +60,52 @@ app.get('/api/config', (req, res) => {
 
 app.post('/api/chat', async (req, res, next) => {
   // For simplicity, we are not persisting history on the server between requests.
-  const { userInput, history = [] } = req.body;
+  const {
+    userInput,
+    history = []
+  } = req.body;
   if (!userInput) {
-    return res.status(400).json({ error: 'userInput is required.' });
+    return res.status(400).json({
+      error: 'userInput is required.'
+    });
   }
 
   try {
-    logger.info({ userInput, historyLength: history.length }, 'Received chat request');
+    logger.info({
+      userInput,
+      historyLength: history.length
+    }, 'Received chat request');
     const modelResponsePart = await geminiClient.sendMessage(userInput, history);
-    const modelResponse = modelResponsePart.text || '';
-    res.json({ modelResponse });
+    const responseText = modelResponsePart.text || '';
+    // Send back in the format the agent expects
+    res.json({
+      text: responseText
+    });
   } catch (error) {
     next(error);
   }
 });
 
 app.post('/api/chat-with-files', async (req, res, next) => {
-  const { userInput, history = [], files } = req.body;
+  // Use 'prompt' to align with the agent's request body, with a fallback to 'userInput'
+  const {
+    prompt: userInput,
+    history = [],
+    files
+  } = req.body;
 
   if (!files || !Array.isArray(files) || files.length === 0) {
-    return res.status(400).json({ error: 'A non-empty "files" array is required.' });
+    return res.status(400).json({
+      error: 'A non-empty "files" array is required.'
+    });
   }
 
   try {
-    logger.info({ userInput, fileCount: files.length, historyLength: history.length }, 'Received chat request with files');
+    logger.info({
+      userInput,
+      fileCount: files.length,
+      historyLength: history.length
+    }, 'Received chat request with files');
 
     // The GeminiApiClient expects an array of { buffer, mimetype }
     const filesForApi = files.map(file => {
@@ -88,8 +119,14 @@ app.post('/api/chat-with-files', async (req, res, next) => {
     });
 
     const modelResponsePart = await geminiClient.sendMessageWithFiles(userInput, history, filesForApi);
-    const modelResponse = modelResponsePart.text || '';
-    res.json({ modelResponse });
+    const responseText = modelResponsePart.text || '';
+
+    // *** THE FIX IS HERE ***
+    // Send the response back in a { "text": "..." } object to match
+    // the contract expected by the harshal-agent service.
+    res.json({
+      text: responseText
+    });
   } catch (error) {
     next(error);
   }
@@ -99,9 +136,14 @@ app.post('/api/chat-with-files', async (req, res, next) => {
 app.use('/api', (err, req, res, next) => {
   logger.error(err, `Error in ${req.method} ${req.path}`);
   if (err instanceof GeminiApiError) {
-    return res.status(err.status || 500).json({ error: err.message, details: err.details });
+    return res.status(err.status || 500).json({
+      error: err.message,
+      details: err.details
+    });
   }
-  res.status(500).json({ error: 'An unexpected error occurred.' });
+  res.status(500).json({
+    error: 'An unexpected error occurred.'
+  });
 });
 
 app.listen(PORT, () => {
