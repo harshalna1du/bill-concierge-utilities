@@ -10,6 +10,10 @@ import {
   GeminiApiClient,
   GeminiApiError
 } from '../gemini/geminiApi.js';
+import {
+  getFile,
+  saveFile
+} from '../gcs/gcs-utils.js';
 
 const DEFAULT_TEXT_MODEL = 'gemini-2.5-flash';
 const DEFAULT_VISION_MODEL = 'gemini-2.5-flash';
@@ -127,6 +131,68 @@ app.post('/api/chat-with-files', async (req, res, next) => {
       text: responseText
     });
   } catch (error) {
+    next(error);
+  }
+});
+
+// GCS Data API Endpoints
+app.get('/api/data/:fileName', async (req, res, next) => {
+  const { fileName } = req.params;
+  const bucketName = process.env.GCS_BUCKET_NAME;
+
+  if (!bucketName) {
+    return res.status(500).json({
+      error: 'GCS_BUCKET_NAME environment variable is not configured'
+    });
+  }
+
+  try {
+    logger.info({ fileName, bucketName }, 'Fetching file from GCS');
+    const fileContent = await getFile(bucketName, fileName);
+    
+    // Return the file contents with application/json content type
+    res.setHeader('Content-Type', 'application/json');
+    res.send(fileContent);
+  } catch (error) {
+    logger.error({ err: error, fileName, bucketName }, 'Failed to fetch file from GCS');
+    if (error.message.includes('not found')) {
+      return res.status(404).json({
+        error: `File '${fileName}' not found`
+      });
+    }
+    next(error);
+  }
+});
+
+app.post('/api/data/:fileName', async (req, res, next) => {
+  const { fileName } = req.params;
+  const bucketName = process.env.GCS_BUCKET_NAME;
+
+  if (!bucketName) {
+    return res.status(500).json({
+      error: 'GCS_BUCKET_NAME environment variable is not configured'
+    });
+  }
+
+  if (!req.body || Object.keys(req.body).length === 0) {
+    return res.status(400).json({
+      error: 'Request body is required'
+    });
+  }
+
+  try {
+    logger.info({ fileName, bucketName }, 'Saving file to GCS');
+    
+    // Convert the request body to a JSON string
+    const dataString = JSON.stringify(req.body);
+    await saveFile(bucketName, fileName, dataString);
+    
+    res.status(200).json({
+      success: true,
+      message: `File '${fileName}' saved successfully`
+    });
+  } catch (error) {
+    logger.error({ err: error, fileName, bucketName }, 'Failed to save file to GCS');
     next(error);
   }
 });

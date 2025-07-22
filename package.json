@@ -9,9 +9,14 @@
   "type": "module",
   "scripts": {
     "start": "node server/server.js",
-    "dev": "nodemon server/server.js | pino-pretty"
+    "dev": "nodemon server/server.js | pino-pretty",
+    "test:gcs": "node test/test-all-gcs.js",
+    "test:gcs-utils": "node test/test-gcs-utils.js",
+    "test:gcs-endpoints": "node test/test-gcs-endpoints.js",
+    "test:gcs-live": "node test/test-live-gcs.js"
   },
   "dependencies": {
+    "@google-cloud/storage": "^7.7.0",
     "cookie-parser": "^1.4.6",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",

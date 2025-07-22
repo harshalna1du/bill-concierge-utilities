@@ -1,0 +1,66 @@
+{
+  "userId": "user-12345",
+  "customerName": "Harshal Naidu",
+  "accountNumber": "9876-54321",
+  "billingAddress": "123 Main St, Charlotte, NC 28202",
+  "autopay": {
+    "isEnrolled": false,
+    "paymentMethod": null
+  },
+  "accountStatus": {
+    "isEligibleForPaymentPlan": true
+  },
+  "currentBill": {
+    "billDate": "2025-07-12",
+    "dueDate": "2025-08-05",
+    "totalAmountDue": "450.75",
+    "previousBalance": "300.00",
+    "paymentsReceived": [
+      {
+        "date": "2025-06-15",
+        "amount": "-300.00"
+      }
+    ],
+    "balanceForward": "0.00",
+    "newCharges": {
+      "electricity": "350.00",
+      "naturalGas": "75.00",
+      "otherFees": [
+        { "itemId": "item-01", "description": "Grid Modernization Fee", "amount": "15.00", "isDisputable": false },
+        { "itemId": "item-02", "description": "Late Payment Fee", "amount": "10.75", "isDisputable": true }
+      ]
+    }
+  },
+  "usageHistory": {
+      "electricityKwh": {
+          "labels": ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+          "data": [950, 900, 800, 900, 1000, 1074]
+      },
+      "naturalGasTherms": {
+          "labels": ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+          "data": [95, 60, 40, 30, 25, 22]
+      }
+  },
+  "paymentHistory": [
+    {
+      "transactionId": "t_98765",
+      "date": "2025-06-15",
+      "amount": "148.21",
+      "status": "Paid",
+      "method": "Visa **** 4242",
+      "declineDetails": null
+    },
+    {
+      "transactionId": "t_12345",
+      "date": "2025-07-15",
+      "amount": "151.04",
+      "status": "Declined",
+      "method": "Amex **** 1001",
+      "declineDetails": {
+        "reasonCode": "CALL_VOICE_CENTER",
+        "reasonDescription": "Card issuer requires voice authorization."
+      }
+    }
+  ],
+  "disputes": []
+} 
