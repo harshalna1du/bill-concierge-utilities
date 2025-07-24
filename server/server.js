@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import cookieParser from 'cookie-parser';
+import cors from 'cors';
 import path from 'path';
 import {
   fileURLToPath
@@ -45,7 +46,29 @@ const PORT = process.env.PORT || 3002;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// --- CORS Configuration ---
+// In a production environment, it's a world-class practice to explicitly
+// whitelist the origins that are allowed to make requests. This is more
+// secure than allowing all origins ('*').
+const allowedOrigins = [
+    'https://bill-concierge-agent.onrender.com', // Deployed Agent
+    'http://localhost:3001'                      // Local development Agent
+];
+
+const corsOptions = {
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    optionsSuccessStatus: 200 // For legacy browser support
+};
+
 // Middlewares
+app.use(cors(corsOptions));
 app.use(express.json({
   limit: process.env.MAX_PAYLOAD_SIZE || DEFAULT_MAX_PAYLOAD_SIZE
 }));
