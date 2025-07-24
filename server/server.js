@@ -91,16 +91,22 @@ app.get('/api/config', (req, res) => {
 // endpoint for observability and debugging.
 app.get('/api/health', (req, res) => {
   const checks = {
-    gcsBucket: process.env.GCS_BUCKET_NAME ? 'OK' : 'MISSING',
-    projectId: process.env.PROJECT_ID ? 'OK' : 'MISSING',
-    location: process.env.LOCATION ? 'OK' : 'MISSING',
-    // We don't check the content of the credentials, just that it's present.
-    googleCredentials: (process.env.GOOGLE_APPLICATION_CREDENTIALS || process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) ? 'OK' : 'MISSING',
+    gcsBucket: {
+      value: process.env.GCS_BUCKET_NAME || 'Not Set',
+      status: process.env.GCS_BUCKET_NAME ? 'OK' : 'MISSING'
+    },
+    projectId: {
+      value: process.env.PROJECT_ID || 'Not Set',
+      status: process.env.PROJECT_ID ? 'OK' : 'MISSING'
+    },
+    googleCredentials: {
+      status: (process.env.GOOGLE_APPLICATION_CREDENTIALS || process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) ? 'OK' : 'MISSING'
+    }
   };
 
-  const isHealthy = Object.values(checks).every(status => status === 'OK');
+  const isHealthy = Object.values(checks).every(check => check.status === 'OK');
 
-  logger.info({ checks }, 'Health check performed.');
+  logger.info({ healthStatus: checks }, 'Health check performed.');
 
   res.status(isHealthy ? 200 : 500).json({
     status: isHealthy ? 'OK' : 'ERROR',
