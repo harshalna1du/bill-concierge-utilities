@@ -48,26 +48,14 @@ export class GeminiApiClient {
     this.#defaultFileModel = options.defaultFileModel;
     this.#systemInstruction = options.systemInstruction;
 
-    // Environment-aware authentication
-    const authOptions = {
+    // The GoogleAuth library automatically handles Application Default Credentials (ADC).
+    // It will look for credentials in the environment (e.g., GOOGLE_APPLICATION_CREDENTIALS_JSON
+    // on Render.com, or a local gcloud login) without needing any explicit configuration here.
+    // This makes the code cleaner and more portable across different environments.
+    this.#auth = new GoogleAuth({
       scopes: 'https://www.googleapis.com/auth/cloud-platform'
-    };
-
-    if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
-      // Deployed environment (e.g., Render): use credentials from environment variable
-      this.#logger.info('Found GOOGLE_APPLICATION_CREDENTIALS_JSON. Initializing GoogleAuth with provided credentials.');
-      try {
-        authOptions.credentials = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
-      } catch (error) {
-        this.#logger.error({ err: error }, 'Failed to parse GOOGLE_APPLICATION_CREDENTIALS_JSON. Ensure it is a valid JSON string.');
-        throw new GeminiApiError('Failed to parse GOOGLE_APPLICATION_CREDENTIALS_JSON.', 400, { originalError: error.message });
-      }
-    } else {
-      // Local development: use Application Default Credentials
-      this.#logger.info('GOOGLE_APPLICATION_CREDENTIALS_JSON not found. Initializing GoogleAuth with Application Default Credentials.');
-    }
-
-    this.#auth = new GoogleAuth(authOptions);
+    });
+    this.#logger.info('Initializing GoogleAuth with Application Default Credentials.');
   }
 
   async #makeApiCall({ url, requestBody }) { // eslint-disable-line
