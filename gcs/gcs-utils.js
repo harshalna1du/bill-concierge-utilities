@@ -14,19 +14,12 @@ import { Storage } from '@google-cloud/storage';
  * Uses the same authentication approach as the Gemini API client
  */
 function createStorageClient() {
-  const storageOptions = {};
-
-  if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
-    // Deployed environment: use credentials from environment variable
-    try {
-      storageOptions.credentials = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
-    } catch (error) {
-      throw new Error('Failed to parse GOOGLE_APPLICATION_CREDENTIALS_JSON for GCS client');
-    }
-  }
-  // Local development: will use Application Default Credentials automatically
-
-  return new Storage(storageOptions);
+  // The @google-cloud/storage library, like other Google Cloud client libraries,
+  // automatically uses Application Default Credentials (ADC). It will look for
+  // credentials in the environment (e.g., GOOGLE_APPLICATION_CREDENTIALS_JSON
+  // or a local gcloud login) without needing any explicit configuration here.
+  // This makes the code cleaner and more portable across different environments.
+  return new Storage();
 }
 
 /**
