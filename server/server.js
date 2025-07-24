@@ -85,6 +85,28 @@ app.get('/api/config', (req, res) => {
   });
 });
 
+// --- Health Check Endpoint ---
+// A world-class practice for microservices is to have a health check
+// endpoint for observability and debugging.
+app.get('/api/health', (req, res) => {
+  const checks = {
+    gcsBucket: process.env.GCS_BUCKET_NAME ? 'OK' : 'MISSING',
+    projectId: process.env.PROJECT_ID ? 'OK' : 'MISSING',
+    location: process.env.LOCATION ? 'OK' : 'MISSING',
+    // We don't check the content of the credentials, just that it's present.
+    googleCredentials: (process.env.GOOGLE_APPLICATION_CREDENTIALS || process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) ? 'OK' : 'MISSING',
+  };
+
+  const isHealthy = Object.values(checks).every(status => status === 'OK');
+
+  logger.info({ checks }, 'Health check performed.');
+
+  res.status(isHealthy ? 200 : 500).json({
+    status: isHealthy ? 'OK' : 'ERROR',
+    checks,
+  });
+});
+
 app.post('/api/chat', async (req, res, next) => {
   const {
     userInput,
