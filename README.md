@@ -1,51 +1,83 @@
-# Project Summary: `bill-concierge-utilities`
+# Project: `harshal-utilities`
 
-**Version:** 2.0 (Contest Submission)
-**Date:** 2025-07-21
+**Version:** 3.0 (Contest Demo)
 
 ## 1. Project Purpose
 
-The `bill-concierge-utilities` project is a dedicated, reusable, and independently deployable microservice responsible for all direct communication with the Google Gemini API. It acts as a secure and robust wrapper, abstracting away the complexities of AI model interaction from the main application logic.
+The `harshal-utilities` project is a dedicated, reusable, and independently deployable microservice. It acts as the "hands" of the AI assistant, serving as a secure and robust proxy for all direct communication with Google Cloud services.
+
+Its sole responsibility is to handle the implementation details of external APIs, allowing the `harshal-agent` to focus purely on conversational logic.
 
 ---
 
-## 2. Key Components
+## 2. Core Responsibilities & Components
 
-1.  **Express API Server (`server/server.js`)**:
-    * A clean Express.js server that exposes the `GeminiApiClient`'s functionality through a REST API.
-    * **Contract-Driven Endpoint**: Features a primary endpoint, `POST /api/chat-with-files`, designed to accept a specific contract from the `bill-concierge-agent`. It correctly receives the detailed `prompt`, conversation `history`, and `files` data and passes them to the Gemini client.
-    * **Deployment Ready**: The server is configured to listen on the `PORT` environment variable provided by the hosting platform (e.g., Render), falling back to a default port for local development.
+### 2.1. Google Gemini API Proxy
+-   **Component**: `gemini/geminiApi.js`
+-   **Endpoint**: `POST /api/chat`
+-   **Function**: Receives a prompt from the `harshal-agent`, makes an authenticated call to the Google Gemini API, and returns the model's response.
 
-2.  **Gemini API Client (`gemini/geminiApi.js`)**:
-    * The core of the project is a reusable `GeminiApiClient` class.
-    * **Environment-Aware Authentication**: The client's authentication is robust and flexible. It automatically uses local Application Default Credentials (ADC) for development but can be configured with a `GOOGLE_APPLICATION_CREDENTIALS_JSON` environment variable for deployed environments, making it highly portable.
-    * It handles the complexities of constructing requests for the Gemini API, including handling multiple file parts.
+### 2.2. Google Cloud Storage (GCS) Wrapper
+-   **Component**: `gcs/gcs-utils.js`
+-   **Endpoints**:
+    -   `GET /api/data/:fileName`: Reads a specified file (e.g., `customer-data.json`) from the GCS bucket.
+    -   `POST /api/data/:fileName`: Saves data to a specified file in the GCS bucket.
 
-3.  **Configuration & Logging**:
-    * **Configuration (`.env`)**: All configuration (Project ID, Location, Model Names) is managed via environment variables, with a `.env.example` file for easy setup. This follows the 12-factor app methodology for clean separation of config from code.
-    * **Logging**: Utilizes `pino` for structured, asynchronous logging.
-
----
-
-## 3. Project Structure
-
-
-bill-concierge-utilities/
-├── .env
-├── .env.example
-├── .gitignore
-├── gemini/
-│   └── geminiApi.js
-├── package.json
-├── server/
-│   └── server.js
-└── test-data/
-└── pdf/
-└── Bill1.pdf
-
+### 2.3. Health Check
+-   **Endpoint**: `GET /api/health`
+-   **Function**: Provides a diagnostic endpoint to verify that all required environment variables are correctly configured and visible to the running service. This is crucial for debugging deployment issues.
 
 ---
 
-## 4. Current State
+## 3. Authentication
 
-The `bill-concierge-utilities` service is stable, fully tested, and successfully deployed on Render. It correctly serves its purpose as the core AI interaction layer of the application, reliably handling requests from the `bill-concierge-agent` and communicating with the Gemini API.
+The service uses Google's **Application Default Credentials (ADC)** strategy, making it portable between local development and production without code changes.
+-   **Local Development**: It automatically uses credentials from running `gcloud auth application-default login` or from a service account key file path specified in the `GOOGLE_APPLICATION_CREDENTIALS` environment variable within the `.env` file.
+-   **Production (Render.com)**: It uses the full JSON content of a service account key provided in the `GOOGLE_APPLICATION_CREDENTIALS_JSON` environment variable.
+
+---
+
+## 4. Local Development Setup
+
+### Step 1: Configure Environment
+Copy the example configuration file to create your local `.env` file.
+```bash
+cp env.example .env
+```
+Ensure the `.env` file points to your service account key file, for example:
+`GOOGLE_APPLICATION_CREDENTIALS="C:\\path\\to\\your\\keyfile.json"`
+
+### Step 2: Install Dependencies
+```bash
+npm install
+```
+
+### Step 3: Run the Server
+The development server uses `nodemon` for auto-restarting and `pino-pretty` for human-readable logs.
+```bash
+npm run dev
+```
+The server will be available at `http://localhost:3002`.
+
+---
+
+## 5. Testing
+
+The project includes a comprehensive test suite to validate its functionality.
+
+### Running All Tests
+With the server running in one terminal, open a second terminal and run:
+```bash
+npm run test:gcs
+```
+This script validates both the GCS utility functions in isolation and the live API endpoints.
+
+### Live Bucket Verification
+To perform a full end-to-end test that writes to and reads from your actual GCS bucket, run:
+```bash
+npm run test:gcs-live
+```
+This is the best way to confirm your authentication and IAM permissions are configured correctly.
+
+
+---

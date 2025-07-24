@@ -10,6 +10,17 @@
 import { Storage } from '@google-cloud/storage';
 
 /**
+ * Custom error class for when a file is not found in GCS.
+ * This allows for more specific error handling than matching strings.
+ */
+export class GCSFileNotFoundError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'GCSFileNotFoundError';
+  }
+}
+
+/**
  * Initialize Google Cloud Storage client
  * Uses the same authentication approach as the Gemini API client
  */
@@ -46,15 +57,15 @@ export async function getFile(bucketName, fileName) {
     // Check if file exists first
     const [exists] = await file.exists();
     if (!exists) {
-      throw new Error(`File '${fileName}' not found in bucket '${bucketName}'`);
+      throw new GCSFileNotFoundError(`File '${fileName}' not found in bucket '${bucketName}'`);
     }
 
     // Download the file
     const [fileBuffer] = await file.download();
     return fileBuffer.toString('utf8');
   } catch (error) {
-    if (error.message.includes('not found')) {
-      throw new Error(`File '${fileName}' not found in bucket '${bucketName}'`);
+    if (error instanceof GCSFileNotFoundError) {
+      throw error; // Re-throw the specific error to be caught by the server.
     }
     throw new Error(`Failed to download file '${fileName}' from bucket '${bucketName}': ${error.message}`);
   }

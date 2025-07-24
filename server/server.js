@@ -13,7 +13,8 @@ import {
 } from '../gemini/geminiApi.js';
 import {
   getFile,
-  saveFile
+  saveFile,
+  GCSFileNotFoundError
 } from '../gcs/gcs-utils.js';
 
 const DEFAULT_TEXT_MODEL = 'gemini-2.5-flash';
@@ -200,10 +201,8 @@ app.get('/api/data/:fileName', async (req, res, next) => {
     res.send(fileContent);
   } catch (error) {
     logger.error({ err: error, fileName, bucketName }, 'Failed to fetch file from GCS');
-    if (error.message.includes('not found')) {
-      return res.status(404).json({
-        error: `File '${fileName}' not found`
-      });
+    if (error instanceof GCSFileNotFoundError) {
+      return res.status(404).json({ error: error.message });
     }
     next(error);
   }
